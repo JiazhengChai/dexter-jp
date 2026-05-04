@@ -42,6 +42,8 @@ OPENAI_API_KEY=sk-...          # OpenAI (default)
 ANTHROPIC_API_KEY=sk-ant-...   # Claude
 GOOGLE_API_KEY=...             # Gemini
 XAI_API_KEY=...                # Grok
+MOONSHOT_API_KEY=...           # Moonshot (Kimi)
+DEEPSEEK_API_KEY=...           # DeepSeek
 OPENROUTER_API_KEY=...         # OpenRouter (access to multiple models)
 
 # Japanese equity data
@@ -183,6 +185,10 @@ During long research sessions with heavy data retrieval, a fast LLM automaticall
 
 Persists across sessions. Dexter remembers your investment thesis, portfolio information, and past analyses.
 
+### Live Progress Indicator
+
+While a response is streaming, the CLI working indicator shows **elapsed time** and an **approximate token count**. This makes it easier to tell whether the model is still generating, reasoning, or about to call tools.
+
 ### Supported LLMs
 
 Switch models on the fly with the `/model` command:
@@ -191,6 +197,8 @@ Switch models on the fly with the `/model` command:
 - Anthropic (Claude)
 - Google (Gemini)
 - xAI (Grok)
+- Moonshot (Kimi)
+- DeepSeek
 - OpenRouter
 - Ollama (local LLMs)
 
