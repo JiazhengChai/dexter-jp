@@ -660,8 +660,8 @@ function inspectChunkContent(chunk: AIMessageChunk): { charDelta: number; mode: 
       if (typeof text === 'string') charDelta += text.length;
       if (MODE_PRIORITY.responding > MODE_PRIORITY[mode]) mode = 'responding';
     } else if (partType === 'thinking' || partType === 'redacted_thinking') {
-      const thinkingText = (part as { thinking?: string }).thinking;
-      if (typeof thinkingText === 'string') charDelta += thinkingText.length;
+      const text = (part as { thinking?: string }).thinking;
+      if (typeof text === 'string') charDelta += text.length;
       if (MODE_PRIORITY.thinking > MODE_PRIORITY[mode]) mode = 'thinking';
     } else if (partType === 'tool_use' || partType === 'input_json_delta') {
       const partialJson = (part as { partial_json?: string }).partial_json;

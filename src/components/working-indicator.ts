@@ -12,6 +12,15 @@ export interface TurnStats {
   streamMode: StreamMode;
 }
 
+// Catch-up tuning for the live token estimate: tiny gaps move smoothly, medium
+// gaps accelerate proportionally, and large gaps jump aggressively to avoid lag.
+const SMALL_GAP_THRESHOLD = 70;
+const MEDIUM_GAP_THRESHOLD = 200;
+const SMALL_GAP_INCREMENT = 3;
+const MEDIUM_GAP_MIN_INCREMENT = 8;
+const MEDIUM_GAP_RATIO = 0.15;
+const LARGE_GAP_INCREMENT = 50;
+
 export class WorkingIndicatorComponent extends Container {
   private spacer: Spacer;
   private text: Text;
@@ -103,7 +112,8 @@ export class WorkingIndicatorComponent extends Container {
 
     const elapsed = Date.now() - stats.turnStartMs;
     this.advanceDisplayedChars(stats.streamedChars);
-    // Rough live estimate for display only; 4 chars/token is a common approximation.
+    // Display-only heuristic inherited from upstream: ~4 chars/token keeps the
+    // counter readable, but it is notably less accurate for Japanese text.
     const tokens = Math.round(this.displayedChars / 4);
     if (tokens <= 0) {
       return theme.muted(`(${formatTurnDuration(elapsed)})`);
@@ -118,12 +128,13 @@ export class WorkingIndicatorComponent extends Container {
       this.displayedChars = target;
       return;
     }
-    // Use a small-step catch-up for near-target updates and bigger jumps when the
-    // stream is far ahead, so the indicator feels smooth without lagging badly.
     let increment: number;
-    if (gap < 70) increment = 3;
-    else if (gap < 200) increment = Math.max(8, Math.ceil(gap * 0.15));
-    else increment = 50;
+    if (gap < SMALL_GAP_THRESHOLD) increment = SMALL_GAP_INCREMENT;
+    else if (gap < MEDIUM_GAP_THRESHOLD) {
+      increment = Math.max(MEDIUM_GAP_MIN_INCREMENT, Math.ceil(gap * MEDIUM_GAP_RATIO));
+    } else {
+      increment = LARGE_GAP_INCREMENT;
+    }
     this.displayedChars = Math.min(this.displayedChars + increment, target);
   }
 }
