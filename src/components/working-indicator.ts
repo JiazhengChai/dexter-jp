@@ -103,6 +103,7 @@ export class WorkingIndicatorComponent extends Container {
 
     const elapsed = Date.now() - stats.turnStartMs;
     this.advanceDisplayedChars(stats.streamedChars);
+    // Rough live estimate for display only; 4 chars/token is a common approximation.
     const tokens = Math.round(this.displayedChars / 4);
     if (tokens <= 0) {
       return theme.muted(`(${formatTurnDuration(elapsed)})`);
@@ -117,6 +118,8 @@ export class WorkingIndicatorComponent extends Container {
       this.displayedChars = target;
       return;
     }
+    // Use a small-step catch-up for near-target updates and bigger jumps when the
+    // stream is far ahead, so the indicator feels smooth without lagging badly.
     let increment: number;
     if (gap < 70) increment = 3;
     else if (gap < 200) increment = Math.max(8, Math.ceil(gap * 0.15));

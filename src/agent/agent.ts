@@ -631,6 +631,8 @@ export class Agent {
   }
 }
 
+// Higher values win when a chunk contains mixed content, so the indicator shows
+// the most actionable phase the model has reached in that chunk.
 const MODE_PRIORITY: Record<StreamMode, number> = {
   requesting: 0,
   responding: 1,

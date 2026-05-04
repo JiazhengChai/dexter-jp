@@ -56,6 +56,10 @@ interface ModelOpts {
 
 type ModelFactory = (name: string, opts: ModelOpts) => BaseChatModel;
 
+function isDeepSeekReasoningModel(name: string): boolean {
+  return name === 'deepseek-v4-pro' || name === 'deepseek-v4-flash';
+}
+
 function getApiKey(envVar: string): string {
   const apiKey = process.env[envVar];
   if (!apiKey) {
@@ -145,7 +149,6 @@ const MODEL_FACTORIES: Record<string, ModelFactory> = {
       },
     }),
   deepseek: (name, opts) => {
-    const isThinkingModel = name === 'deepseek-v4-pro' || name === 'deepseek-v4-flash';
     return new ChatOpenAI({
       model: name,
       ...opts,
@@ -153,7 +156,9 @@ const MODEL_FACTORIES: Record<string, ModelFactory> = {
       configuration: {
         baseURL: 'https://api.deepseek.com',
       },
-      ...(isThinkingModel && {
+      ...(isDeepSeekReasoningModel(name) && {
+        // DeepSeek v4 uses the OpenAI-compatible reasoning_effort knob.
+        // "high" requests the provider's strongest reasoning mode.
         reasoning_effort: 'high',
         extraBody: {
           thinking: { type: 'enabled' },
