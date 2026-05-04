@@ -113,7 +113,8 @@ export class WorkingIndicatorComponent extends Container {
     const elapsed = Date.now() - stats.turnStartMs;
     this.advanceDisplayedChars(stats.streamedChars);
     // Display-only heuristic inherited from upstream: ~4 chars/token keeps the
-    // counter readable, but it is notably less accurate for Japanese text.
+    // counter stable and easy to compare across providers, but it is notably
+    // less accurate for Japanese text than for English-heavy output.
     const tokens = Math.round(this.displayedChars / 4);
     if (tokens <= 0) {
       return theme.muted(`(${formatTurnDuration(elapsed)})`);
