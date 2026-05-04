@@ -1,8 +1,16 @@
 import { Container, Spacer, Text } from '@mariozechner/pi-tui';
 import type { WorkingState } from '../types.js';
+import type { StreamMode } from '../agent/types.js';
 import { getRandomThinkingVerb } from '../utils/thinking-verbs.js';
 import { theme } from '../theme.js';
 import { subscribeSpinner, currentSpinnerFrame } from '../utils/spinner.js';
+import { formatTurnDuration, formatTokensCompact } from '../utils/format.js';
+
+export interface TurnStats {
+  turnStartMs: number;
+  streamedChars: number;
+  streamMode: StreamMode;
+}
 
 export class WorkingIndicatorComponent extends Container {
   private spacer: Spacer;
@@ -11,6 +19,9 @@ export class WorkingIndicatorComponent extends Container {
   private thinkingVerb = getRandomThinkingVerb();
   private prevStatus: WorkingState['status'] = 'idle';
   private unsubscribeSpinner: (() => void) | null = null;
+  private turnStatsProvider: (() => TurnStats | null) | null = null;
+  private displayedChars = 0;
+  private lastTurnStartMs: number | null = null;
 
   constructor(_tui: unknown) {
     super();
@@ -37,11 +48,17 @@ export class WorkingIndicatorComponent extends Container {
       this.stopSpinner();
       this.spacer.setLines(0);
       this.text.setText('');
+      this.displayedChars = 0;
+      this.lastTurnStartMs = null;
       return;
     }
     this.spacer.setLines(1);
     this.startSpinner();
     this.updateMessage(currentSpinnerFrame());
+  }
+
+  setTurnStatsProvider(provider: (() => TurnStats | null) | null) {
+    this.turnStatsProvider = provider;
   }
 
   dispose() {
@@ -70,6 +87,40 @@ export class WorkingIndicatorComponent extends Container {
     const message = this.state.status === 'approval'
       ? 'Waiting for approval...'
       : `${this.thinkingVerb}...`;
-    this.text.setText(` ${theme.primary(frame)} ${theme.primary(message)}`);
+    const suffix = this.computeStatsSuffix();
+    const fullMessage = suffix ? `${message} ${suffix}` : message;
+    this.text.setText(` ${theme.primary(frame)} ${theme.primary(fullMessage)}`);
+  }
+
+  private computeStatsSuffix(): string | null {
+    const stats = this.turnStatsProvider?.() ?? null;
+    if (!stats) return null;
+
+    if (this.lastTurnStartMs !== stats.turnStartMs) {
+      this.displayedChars = 0;
+      this.lastTurnStartMs = stats.turnStartMs;
+    }
+
+    const elapsed = Date.now() - stats.turnStartMs;
+    this.advanceDisplayedChars(stats.streamedChars);
+    const tokens = Math.round(this.displayedChars / 4);
+    if (tokens <= 0) {
+      return theme.muted(`(${formatTurnDuration(elapsed)})`);
+    }
+    const arrow = stats.streamMode === 'requesting' ? '↑' : '↓';
+    return theme.muted(`(${formatTurnDuration(elapsed)} · ${arrow} ${formatTokensCompact(tokens)} tokens)`);
+  }
+
+  private advanceDisplayedChars(target: number) {
+    const gap = target - this.displayedChars;
+    if (gap <= 0) {
+      this.displayedChars = target;
+      return;
+    }
+    let increment: number;
+    if (gap < 70) increment = 3;
+    else if (gap < 200) increment = Math.max(8, Math.ceil(gap * 0.15));
+    else increment = 50;
+    this.displayedChars = Math.min(this.displayedChars + increment, target);
   }
 }

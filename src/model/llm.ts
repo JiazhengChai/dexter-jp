@@ -144,15 +144,23 @@ const MODEL_FACTORIES: Record<string, ModelFactory> = {
         baseURL: 'https://api.moonshot.cn/v1',
       },
     }),
-  deepseek: (name, opts) =>
-    new ChatOpenAI({
+  deepseek: (name, opts) => {
+    const isThinkingModel = name === 'deepseek-v4-pro' || name === 'deepseek-v4-flash';
+    return new ChatOpenAI({
       model: name,
       ...opts,
       apiKey: getApiKey('DEEPSEEK_API_KEY'),
       configuration: {
         baseURL: 'https://api.deepseek.com',
       },
-    }),
+      ...(isThinkingModel && {
+        reasoning_effort: 'high',
+        extraBody: {
+          thinking: { type: 'enabled' },
+        },
+      }),
+    });
+  },
   ollama: (name, opts) =>
     new ChatOllama({
       model: name.replace(/^ollama:/, ''),

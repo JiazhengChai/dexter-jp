@@ -285,6 +285,7 @@ export async function runCli() {
 
   const errorText = new Text('', 0, 0);
   const workingIndicator = new WorkingIndicatorComponent(tui);
+  workingIndicator.setTurnStatsProvider(() => agentRunner.turnStats);
   const editor = new CustomEditor(tui, editorTheme);
   const hintBar = new HintBarComponent();
   const debugPanel = new DebugPanelComponent(8, true);
