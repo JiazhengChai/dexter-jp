@@ -5,6 +5,30 @@ import { getProviderById } from '@/providers';
 // Load .env on module import
 config({ quiet: true });
 
+function normalizeEnvValue(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+export function isPlaceholderEnvValue(value: string | undefined): boolean {
+  const normalized = normalizeEnvValue(value);
+  return Boolean(normalized && normalized.startsWith('your-'));
+}
+
+export function isConfiguredEnvValue(value: string | undefined): boolean {
+  const normalized = normalizeEnvValue(value);
+  return Boolean(normalized && !isPlaceholderEnvValue(normalized));
+}
+
+export function getConfiguredEnvValue(name: string): string | undefined {
+  const value = normalizeEnvValue(process.env[name]);
+  return isConfiguredEnvValue(value) ? value : undefined;
+}
+
+export function hasConfiguredEnvValue(name: string): boolean {
+  return Boolean(getConfiguredEnvValue(name));
+}
+
 export function getApiKeyNameForProvider(providerId: string): string | undefined {
   return getProviderById(providerId)?.apiKeyEnvVar;
 }
@@ -20,8 +44,7 @@ export function checkApiKeyExistsForProvider(providerId: string): boolean {
 }
 
 export function checkApiKeyExists(apiKeyName: string): boolean {
-  const value = process.env[apiKeyName];
-  if (value && value.trim() && !value.trim().startsWith('your-')) {
+  if (hasConfiguredEnvValue(apiKeyName)) {
     return true;
   }
 
@@ -35,7 +58,7 @@ export function checkApiKeyExists(apiKeyName: string): boolean {
         const [key, ...valueParts] = trimmed.split('=');
         if (key.trim() === apiKeyName) {
           const val = valueParts.join('=').trim();
-          if (val && !val.startsWith('your-')) {
+          if (isConfiguredEnvValue(val)) {
             return true;
           }
         }

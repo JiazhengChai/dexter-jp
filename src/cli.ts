@@ -7,7 +7,7 @@ import type {
   ToolStartEvent,
 } from './agent/index.js';
 import { dexterPath } from './utils/paths.js';
-import { getApiKeyNameForProvider, getProviderDisplayName } from './utils/env.js';
+import { getApiKeyNameForProvider, getProviderDisplayName, hasConfiguredEnvValue } from './utils/env.js';
 import { defaultQueue } from './utils/message-queue.js';
 import { logger } from './utils/logger.js';
 import {
@@ -268,12 +268,13 @@ export async function runCli() {
 
   // Startup warnings for missing API keys (JP-specific)
   const warnings: string[] = [];
-  if (!process.env.EDINETDB_API_KEY) {
+  if (!hasConfiguredEnvValue('EDINETDB_API_KEY')) {
     warnings.push('EDINETDB_API_KEY not set — financial data tools will not work. Get a key at edinetdb.jp');
   }
-  const hasLlmKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY ||
-    process.env.GOOGLE_API_KEY || process.env.XAI_API_KEY || process.env.OPENROUTER_API_KEY;
-  if (!hasLlmKey && !process.env.OLLAMA_BASE_URL) {
+  const hasLlmKey = hasConfiguredEnvValue('OPENAI_API_KEY') || hasConfiguredEnvValue('ANTHROPIC_API_KEY') ||
+    hasConfiguredEnvValue('GOOGLE_API_KEY') || hasConfiguredEnvValue('XAI_API_KEY') || hasConfiguredEnvValue('OPENROUTER_API_KEY') ||
+    hasConfiguredEnvValue('MOONSHOT_API_KEY') || hasConfiguredEnvValue('DEEPSEEK_API_KEY');
+  if (!hasLlmKey && !hasConfiguredEnvValue('OLLAMA_BASE_URL')) {
     warnings.push('No LLM API key set — set OPENAI_API_KEY, ANTHROPIC_API_KEY, or GOOGLE_API_KEY in .env');
   }
   const warningText = new Text(

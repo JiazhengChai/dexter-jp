@@ -13,6 +13,7 @@ import { DEFAULT_SYSTEM_PROMPT } from '@/agent/prompts';
 import type { TokenUsage } from '@/agent/types';
 import { logger } from '@/utils';
 import { classifyError, isNonRetryableError } from '@/utils/errors';
+import { getConfiguredEnvValue } from '@/utils/env';
 import { resolveProvider, getProviderById } from '@/providers';
 
 export const DEFAULT_PROVIDER = 'openai';
@@ -61,9 +62,9 @@ function isDeepSeekReasoningModel(name: string): boolean {
 }
 
 function getApiKey(envVar: string): string {
-  const apiKey = process.env[envVar];
+  const apiKey = getConfiguredEnvValue(envVar);
   if (!apiKey) {
-    throw new Error(`[LLM] ${envVar} not found in environment variables`);
+    throw new Error(`[LLM] ${envVar} not found in environment variables or is still set to a placeholder value`);
   }
   return apiKey;
 }
@@ -166,12 +167,14 @@ const MODEL_FACTORIES: Record<string, ModelFactory> = {
       }),
     });
   },
-  ollama: (name, opts) =>
-    new ChatOllama({
+  ollama: (name, opts) => {
+    const baseUrl = getConfiguredEnvValue('OLLAMA_BASE_URL');
+    return new ChatOllama({
       model: name.replace(/^ollama:/, ''),
       ...opts,
-      ...(process.env.OLLAMA_BASE_URL ? { baseUrl: process.env.OLLAMA_BASE_URL } : {}),
-    }),
+      ...(baseUrl ? { baseUrl } : {}),
+    });
+  },
 };
 
 const DEFAULT_FACTORY: ModelFactory = (name, opts) =>

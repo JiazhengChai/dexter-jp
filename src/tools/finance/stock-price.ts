@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { resolveEdinetCode } from './resolver.js';
 import { api as edinetApi } from './api.js';
 import { formatToolResult } from '../types.js';
+import { getConfiguredEnvValue, hasConfiguredEnvValue } from '../../utils/env.js';
 import { logger } from '../../utils/logger.js';
 
 /**
@@ -16,7 +17,7 @@ import { logger } from '../../utils/logger.js';
 const JQUANTS_BASE = 'https://api.jquants.com/v2';
 
 function getJQuantsApiKey(): string {
-  return process.env.JQUANTS_API_KEY || '';
+  return getConfiguredEnvValue('JQUANTS_API_KEY') || '';
 }
 
 /**
@@ -169,5 +170,5 @@ export const getStockPrice = new DynamicStructuredTool({
  * Check if J-Quants is available (JQUANTS_API_KEY is set).
  */
 export function isJQuantsAvailable(): boolean {
-  return Boolean(process.env.JQUANTS_API_KEY);
+  return hasConfiguredEnvValue('JQUANTS_API_KEY');
 }
