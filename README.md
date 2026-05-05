@@ -42,6 +42,8 @@ OPENAI_API_KEY=sk-...          # OpenAI（デフォルト）
 ANTHROPIC_API_KEY=sk-ant-...   # Claude
 GOOGLE_API_KEY=...             # Gemini
 XAI_API_KEY=...                # Grok
+MOONSHOT_API_KEY=...           # Moonshot（Kimi）
+DEEPSEEK_API_KEY=...           # DeepSeek
 OPENROUTER_API_KEY=...         # OpenRouter（複数モデル利用可）
 
 # 日本株データ
@@ -183,6 +185,10 @@ CLIで `/rules` と入力すると現在のルールを確認できる。
 
 セッション間で記憶を保持。投資方針、ポートフォリオ情報、過去の分析結果を覚える。
 
+### ライブ進捗表示
+
+応答ストリーミング中、CLIのワーキングインジケーターに**経過時間**と**推定トークン数**が表示される。長文回答やツール実行前後でも、どのくらい進んでいるかを把握しやすい。
+
 ### 対応LLM
 
 `/model`コマンドでCLI上から切替可能:
@@ -191,6 +197,8 @@ CLIで `/rules` と入力すると現在のルールを確認できる。
 - Anthropic（Claude）
 - Google（Gemini）
 - xAI（Grok）
+- Moonshot（Kimi）
+- DeepSeek
 - OpenRouter
 - Ollama（ローカルLLM）
 

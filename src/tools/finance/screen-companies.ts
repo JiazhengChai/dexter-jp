@@ -1,7 +1,9 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import type { RunnableConfig } from '@langchain/core/runnables';
 import { z } from 'zod';
+import { resolveProvider } from '../../providers.js';
 import { callLlm } from '../../model/llm.js';
+import { classifyError, formatUserFacingError } from '../../utils/errors.js';
 import { formatToolResult } from '../types.js';
 import { getCurrentDate } from '../../agent/prompts.js';
 import { api } from './api.js';
@@ -84,6 +86,41 @@ const ScreenerConditionSchema = z.object({
 
 type ScreenerConditions = z.infer<typeof ScreenerConditionSchema>;
 
+function isLikelyStructuredOutputCompatibilityError(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes('provider returned error') ||
+    lower.includes('structured output') ||
+    lower.includes('response format') ||
+    lower.includes('response_format') ||
+    lower.includes('json schema') ||
+    lower.includes('invalid schema') ||
+    lower.includes('tool calling') ||
+    lower.includes('function calling');
+}
+
+export function formatScreenCompaniesCriteriaError(error: unknown, model: string): {
+  error: string;
+  details: string;
+  suggestion?: string;
+} {
+  const raw = error instanceof Error ? error.message : String(error);
+  const provider = resolveProvider(model);
+  const errorType = classifyError(raw);
+
+  if (errorType === 'unknown' && isLikelyStructuredOutputCompatibilityError(raw)) {
+    return {
+      error: 'Current model could not build screening criteria',
+      details: `The selected model "${model}" via ${provider.displayName} failed during the structured-output step required by company_screener. The EDINET DB screener request was not sent.`,
+      suggestion: 'Switch to a model/provider with reliable structured output support, such as OpenAI, Anthropic, Gemini, or a stronger OpenRouter model.',
+    };
+  }
+
+  return {
+    error: 'Failed to parse screening criteria',
+    details: formatUserFacingError(raw, provider.displayName),
+  };
+}
+
 function buildScreenerPrompt(): string {
   return `You are a Japanese stock screening assistant.
 Current date: ${getCurrentDate()}
@@ -144,10 +181,7 @@ export function createScreenCompanies(model: string): DynamicStructuredTool {
         conditions = ScreenerConditionSchema.parse(response);
       } catch (error) {
         return formatToolResult(
-          {
-            error: 'Failed to parse screening criteria',
-            details: error instanceof Error ? error.message : String(error),
-          },
+          formatScreenCompaniesCriteriaError(error, model),
           [],
         );
       }

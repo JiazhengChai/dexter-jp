@@ -3,6 +3,7 @@ import { ExaSearchResults } from '@langchain/exa';
 import Exa from 'exa-js';
 import { z } from 'zod';
 import { formatToolResult, parseSearchResults } from '../types.js';
+import { getConfiguredEnvValue } from '@/utils/env';
 import { logger } from '@/utils';
 
 // Lazily initialized to avoid errors when API key is not set
@@ -10,7 +11,11 @@ let exaTool: { invoke: (query: string) => Promise<unknown> } | null = null;
 
 function getExaTool(): { invoke: (query: string) => Promise<unknown> } {
   if (!exaTool) {
-    const client = new Exa(process.env.EXASEARCH_API_KEY);
+    const apiKey = getConfiguredEnvValue('EXASEARCH_API_KEY');
+    if (!apiKey) {
+      throw new Error('[Exa API] EXASEARCH_API_KEY is not set');
+    }
+    const client = new Exa(apiKey);
     // exa-js@2.x (root) vs exa-js@1.x (inside @langchain/exa) have
     // incompatible private fields but are compatible at runtime.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

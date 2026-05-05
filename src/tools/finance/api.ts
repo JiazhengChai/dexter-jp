@@ -1,4 +1,5 @@
 import { readCache, writeCache, describeRequest } from '../../utils/cache.js';
+import { getConfiguredEnvValue } from '../../utils/env.js';
 import { logger } from '../../utils/logger.js';
 
 const BASE_URL = 'https://edinetdb.jp/v1';
@@ -41,7 +42,7 @@ export function stripFieldsDeep(value: unknown, fields: readonly string[]): unkn
 }
 
 function getApiKey(): string {
-  return process.env.EDINETDB_API_KEY || '';
+  return getConfiguredEnvValue('EDINETDB_API_KEY') || '';
 }
 
 /**

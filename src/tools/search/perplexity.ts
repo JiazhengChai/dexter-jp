@@ -1,6 +1,7 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { formatToolResult } from '../types.js';
+import { getConfiguredEnvValue } from '@/utils/env';
 import { logger } from '@/utils';
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
@@ -22,7 +23,7 @@ interface PerplexityCompletionResponse {
 }
 
 async function callPerplexity(query: string): Promise<PerplexityCompletionResponse> {
-  const apiKey = process.env.PERPLEXITY_API_KEY;
+  const apiKey = getConfiguredEnvValue('PERPLEXITY_API_KEY');
   if (!apiKey) {
     throw new Error('[Perplexity API] PERPLEXITY_API_KEY is not set');
   }

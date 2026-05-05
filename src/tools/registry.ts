@@ -14,6 +14,7 @@ import { heartbeatTool, HEARTBEAT_TOOL_DESCRIPTION } from './heartbeat/heartbeat
 import { cronTool, CRON_TOOL_DESCRIPTION } from './cron/cron-tool.js';
 import { memoryGetTool, MEMORY_GET_DESCRIPTION, memorySearchTool, MEMORY_SEARCH_DESCRIPTION, memoryUpdateTool, MEMORY_UPDATE_DESCRIPTION } from './memory/index.js';
 import { discoverSkills } from '../skills/index.js';
+import { hasConfiguredEnvValue } from '../utils/env.js';
 
 /**
  * A registered tool with its rich description for system prompt injection.
@@ -153,7 +154,7 @@ export function getToolRegistry(model: string): RegisteredTool[] {
   }
 
   // Include web_search if Exa, Perplexity, or Tavily API key is configured (Exa → Perplexity → Tavily)
-  if (process.env.EXASEARCH_API_KEY) {
+  if (hasConfiguredEnvValue('EXASEARCH_API_KEY')) {
     tools.push({
       name: 'web_search',
       tool: exaSearch,
@@ -161,7 +162,7 @@ export function getToolRegistry(model: string): RegisteredTool[] {
       compactDescription: 'Search the web for current information. Returns titles, URLs, and highlights.',
       concurrencySafe: true,
     });
-  } else if (process.env.PERPLEXITY_API_KEY) {
+  } else if (hasConfiguredEnvValue('PERPLEXITY_API_KEY')) {
     tools.push({
       name: 'web_search',
       tool: perplexitySearch,
@@ -169,7 +170,7 @@ export function getToolRegistry(model: string): RegisteredTool[] {
       compactDescription: 'Search the web for current information. Returns an answer with citations.',
       concurrencySafe: true,
     });
-  } else if (process.env.TAVILY_API_KEY) {
+  } else if (hasConfiguredEnvValue('TAVILY_API_KEY')) {
     tools.push({
       name: 'web_search',
       tool: tavilySearch,
@@ -180,7 +181,7 @@ export function getToolRegistry(model: string): RegisteredTool[] {
   }
 
   // Include x_search if X Bearer Token is configured
-  if (process.env.X_BEARER_TOKEN) {
+  if (hasConfiguredEnvValue('X_BEARER_TOKEN')) {
     tools.push({
       name: 'x_search',
       tool: xSearchTool,

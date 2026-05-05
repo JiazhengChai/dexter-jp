@@ -13,6 +13,7 @@ import { DEFAULT_SYSTEM_PROMPT } from '@/agent/prompts';
 import type { TokenUsage } from '@/agent/types';
 import { logger } from '@/utils';
 import { classifyError, isNonRetryableError } from '@/utils/errors';
+import { getConfiguredEnvValue } from '@/utils/env';
 import { resolveProvider, getProviderById } from '@/providers';
 
 export const DEFAULT_PROVIDER = 'openai';
@@ -56,10 +57,14 @@ interface ModelOpts {
 
 type ModelFactory = (name: string, opts: ModelOpts) => BaseChatModel;
 
+function isDeepSeekReasoningModel(name: string): boolean {
+  return name === 'deepseek-v4-pro' || name === 'deepseek-v4-flash';
+}
+
 function getApiKey(envVar: string): string {
-  const apiKey = process.env[envVar];
+  const apiKey = getConfiguredEnvValue(envVar);
   if (!apiKey) {
-    throw new Error(`[LLM] ${envVar} not found in environment variables`);
+    throw new Error(`[LLM] ${envVar} not found in environment variables or is still set to a placeholder value`);
   }
   return apiKey;
 }
@@ -144,21 +149,32 @@ const MODEL_FACTORIES: Record<string, ModelFactory> = {
         baseURL: 'https://api.moonshot.cn/v1',
       },
     }),
-  deepseek: (name, opts) =>
-    new ChatOpenAI({
+  deepseek: (name, opts) => {
+    return new ChatOpenAI({
       model: name,
       ...opts,
       apiKey: getApiKey('DEEPSEEK_API_KEY'),
       configuration: {
         baseURL: 'https://api.deepseek.com',
       },
-    }),
-  ollama: (name, opts) =>
-    new ChatOllama({
+      ...(isDeepSeekReasoningModel(name) && {
+        // DeepSeek v4 uses the OpenAI-compatible reasoning_effort knob.
+        // "high" requests the provider's strongest reasoning mode.
+        reasoning_effort: 'high',
+        extraBody: {
+          thinking: { type: 'enabled' },
+        },
+      }),
+    });
+  },
+  ollama: (name, opts) => {
+    const baseUrl = getConfiguredEnvValue('OLLAMA_BASE_URL');
+    return new ChatOllama({
       model: name.replace(/^ollama:/, ''),
       ...opts,
-      ...(process.env.OLLAMA_BASE_URL ? { baseUrl: process.env.OLLAMA_BASE_URL } : {}),
-    }),
+      ...(baseUrl ? { baseUrl } : {}),
+    });
+  },
 };
 
 const DEFAULT_FACTORY: ModelFactory = (name, opts) =>
